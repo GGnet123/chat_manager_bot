@@ -1,0 +1,46 @@
+# Dependencies
+/vendor
+/node_modules
+
+# Build artifacts
+/public/build
+/public/hot
+
+# Storage (except structure)
+/storage/*.key
+/storage/logs/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+
+# Environment files
+.env
+.env.backup
+.env.production
+
+# IDE and editor
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitattributes
+.gitignore
+
+# Docker
+docker-compose.override.yml
+
+# Testing
+/coverage
+.phpunit.result.cache
+
+# Misc
+*.log
+npm-debug.log
+yarn-error.log
