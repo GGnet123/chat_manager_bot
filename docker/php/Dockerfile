@@ -47,11 +47,15 @@ WORKDIR /var/www
 # Copy PHP configuration
 COPY php.ini /usr/local/etc/php/conf.d/custom.ini
 
-# Set ownership
-RUN chown -R appuser:appgroup /var/www
+# Copy entrypoint script
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+
+# Set ownership and permissions
+RUN chmod +x /usr/local/bin/entrypoint.sh \
+    && chown -R appuser:appgroup /var/www
 
 USER appuser
 
 EXPOSE 9000
 
-CMD ["php-fpm"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
