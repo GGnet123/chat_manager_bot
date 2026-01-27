@@ -1,4 +1,4 @@
-# ServiceBot - AI Assistant Platform
+# Chat Manager Bot - AI Assistant Platform
 
 ## Project Overview
 
