@@ -19,6 +19,8 @@ class Conversation extends Model
         'platform',
         'status',
         'context',
+        'state',
+        'summary',
         'last_message_at',
     ];
 
@@ -27,8 +29,64 @@ class Conversation extends Model
         return [
             'platform' => Platform::class,
             'context' => 'array',
+            'state' => 'array',
             'last_message_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Get default state for new conversations.
+     */
+    public static function defaultState(): array
+    {
+        return [
+            'intent' => 'unknown',      // greeting, menu, reservation, order, inquiry, complaint, other
+            'stage' => 'initial',        // initial, gathering_info, confirming, completed, transferred
+            'awaiting' => null,          // What we're waiting for: name, phone, date, time, confirmation, etc.
+            'flags' => [],               // Additional flags: needs_human, urgent, vip, etc.
+        ];
+    }
+
+    /**
+     * Get current conversation state or default.
+     */
+    public function getState(): array
+    {
+        return $this->state ?? self::defaultState();
+    }
+
+    /**
+     * Update conversation state.
+     */
+    public function updateState(array $updates): void
+    {
+        $currentState = $this->getState();
+        $this->update(['state' => array_merge($currentState, $updates)]);
+    }
+
+    /**
+     * Get specific state value.
+     */
+    public function getStateValue(string $key, mixed $default = null): mixed
+    {
+        return $this->getState()[$key] ?? $default;
+    }
+
+    /**
+     * Update conversation summary.
+     */
+    public function updateSummary(string $summary): void
+    {
+        $this->update(['summary' => $summary]);
+    }
+
+    /**
+     * Update context with client/action information.
+     */
+    public function updateContext(array $updates): void
+    {
+        $currentContext = $this->context ?? [];
+        $this->update(['context' => array_merge($currentContext, $updates)]);
     }
 
     public function business(): BelongsTo
@@ -54,12 +112,13 @@ class Conversation extends Model
     public function getMessagesForGpt(int $limit = 20): array
     {
         return $this->messages()
-            ->latest()
+            ->reorder()                       // Clear existing orderBy from relationship
+            ->orderBy('created_at', 'desc')   // Get newest first for limiting
             ->take($limit)
             ->get()
-            ->reverse()
+            ->reverse()                       // Reverse to chronological order (oldest first)
             ->map(fn ($message) => [
-                'id' => $message->id,
+                'datetime' => $message->created_at,
                 'role' => $message->role,
                 'content' => $message->content,
             ])

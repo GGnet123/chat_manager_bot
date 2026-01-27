@@ -106,8 +106,8 @@ When a business adds/updates their Telegram bot token via admin panel:
 2. Generates unique `telegram_webhook_id` and `telegram_webhook_secret`
 3. Dispatches `SetupTelegramWebhookJob`
 4. Job calls Telegram API `setWebhook` with:
-   - URL: `https://yourdomain.com/api/webhook/telegram/{webhook_id}`
-   - Secret token for verification
+    - URL: `https://yourdomain.com/api/webhook/telegram/{webhook_id}`
+    - Secret token for verification
 
 **Webhook lookup is efficient**: Single indexed query on `telegram_webhook_id` instead of iterating all businesses.
 
@@ -235,15 +235,15 @@ TELEGRAM_WEBHOOK_SECRET=your-webhook-secret
 
 ### Core Tables
 - `businesses` - Tenant organizations
-  - `telegram_webhook_id` - Unique identifier for webhook URL (indexed)
-  - `telegram_webhook_secret` - Per-business webhook secret
+    - `telegram_webhook_id` - Unique identifier for webhook URL (indexed)
+    - `telegram_webhook_secret` - Per-business webhook secret
 - `users` - Admin users (managers)
 - `business_user` - Many-to-many pivot with per-business role
 - `clients` - WhatsApp/Telegram contacts
 - `conversations` - Chat sessions
-  - `state` (JSONB) - Intent, stage, awaiting, flags
-  - `summary` (TEXT) - Brief conversation summary
-  - `context` (JSONB) - Additional context data
+    - `state` (JSONB) - Intent, stage, awaiting, flags
+    - `summary` (TEXT) - Brief conversation summary
+    - `context` (JSONB) - Additional context data
 - `conversation_messages` - Individual messages
 - `client_actions` - Extracted actions from conversations
 - `gpt_configurations` - GPT settings per business

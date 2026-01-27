@@ -8,6 +8,7 @@ readonly class ChatResponseDTO
         public string $content,
         public array $actions = [],
         public ?string $cleanContent = null,
+        public ?array $state = null,
         public ?int $promptTokens = null,
         public ?int $completionTokens = null,
         public ?string $model = null,
@@ -16,6 +17,11 @@ readonly class ChatResponseDTO
     public function hasActions(): bool
     {
         return count($this->actions) > 0;
+    }
+
+    public function hasState(): bool
+    {
+        return $this->state !== null;
     }
 
     public function getDisplayContent(): string

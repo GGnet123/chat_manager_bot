@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Contracts\AI\ChatCompletionInterface;
 use App\Contracts\Messaging\MessengerInterface;
 use App\Events\ActionCreated;
+use App\Events\ActionStatusChanged;
+use App\Listeners\NotifyClientOnActionStatusChanged;
 use App\Listeners\NotifyManagersOnActionCreated;
 use App\Services\AI\ChatGptService;
 use App\Services\Messaging\WhatsApp\WhatsAppService;
@@ -71,5 +73,6 @@ class AppServiceProvider extends ServiceProvider
     protected function registerEvents(): void
     {
         Event::listen(ActionCreated::class, NotifyManagersOnActionCreated::class);
+        Event::listen(ActionStatusChanged::class, NotifyClientOnActionStatusChanged::class);
     }
 }

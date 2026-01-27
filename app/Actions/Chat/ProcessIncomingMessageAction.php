@@ -45,18 +45,23 @@ class ProcessIncomingMessageAction
             return $this->createResponse(
                 $message,
                 $client,
-                'Thank you for your message. Our team will get back to you shortly.'
+                'Спасибо за ваше сообщение. Наша команда свяжется с вами в ближайшее время.'
             );
         }
 
-        // Build system prompt
-        $systemPrompt = $this->promptBuilder->buildSystemPrompt($business, $gptConfig, $client);
+        // Build system messages (multiple system messages for state, context, etc.)
+        $systemMessages = $this->promptBuilder->buildSystemMessages(
+            $business,
+            $gptConfig,
+            $conversation,
+            $client
+        );
 
-        // Get conversation history for GPT
-        $messages = $conversation->getMessagesForGpt(10);
+        // Get only last user message (state and summary provide context now)
+        $messages = $conversation->getMessagesForGpt(5);
 
         // Get GPT response
-        $response = $this->chatGptService->complete($messages, $gptConfig, $systemPrompt);
+        $response = $this->chatGptService->complete($messages, $gptConfig, $systemMessages);
 
         // Process any actions in the response
         if ($response->hasActions()) {
@@ -71,6 +76,25 @@ class ProcessIncomingMessageAction
                         'details' => $action->details,
                     ]);
                 }
+            }
+        }
+
+        // Update conversation state if GPT provided it
+        if ($response->hasState()) {
+            $stateUpdate = $response->state;
+
+            // Extract summary separately
+            $summary = $stateUpdate['summary'] ?? null;
+            unset($stateUpdate['summary']);
+
+            // Update state fields
+            if (!empty($stateUpdate)) {
+                $conversation->updateState($stateUpdate);
+            }
+
+            // Update summary
+            if ($summary) {
+                $conversation->updateSummary($summary);
             }
         }
 
@@ -126,6 +150,7 @@ class ProcessIncomingMessageAction
                 'client_id' => $client->id,
                 'platform' => $platform,
                 'status' => 'active',
+                'state' => Conversation::defaultState(),
                 'last_message_at' => now(),
             ]);
         }

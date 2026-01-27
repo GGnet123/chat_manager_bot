@@ -16,10 +16,17 @@ class ChatGptService implements ChatCompletionInterface
         private ResponseParser $responseParser,
     ) {}
 
+    /**
+     * Complete a chat with GPT.
+     *
+     * @param array $messages Conversation messages
+     * @param GptConfiguration $config GPT configuration
+     * @param string|array|null $systemPrompt Single system prompt string OR array of system messages
+     */
     public function complete(
         array $messages,
         GptConfiguration $config,
-        ?string $systemPrompt = null
+        string|array|null $systemPrompt = null
     ): ChatResponseDTO {
         $preparedMessages = $this->prepareMessages($messages, $systemPrompt ?? $config->system_prompt);
 
@@ -33,7 +40,7 @@ class ChatGptService implements ChatCompletionInterface
                     'temperature' => $config->temperature,
                 ]);
 
-            Log::info("Message TO ChatGPT", ['messages' => $preparedMessages]);
+            Log::debug("ChatGPT Request", ['messages' => $preparedMessages]);
 
             if (!$response->successful()) {
                 Log::error('OpenAI API error', [
@@ -42,7 +49,7 @@ class ChatGptService implements ChatCompletionInterface
                 ]);
 
                 return new ChatResponseDTO(
-                    content: 'I apologize, but I\'m having trouble processing your request right now. Please try again later.',
+                    content: 'Извините, возникла проблема при обработке вашего запроса. Пожалуйста, попробуйте позже.',
                 );
             }
 
@@ -50,13 +57,20 @@ class ChatGptService implements ChatCompletionInterface
             $content = $data['choices'][0]['message']['content'] ?? '';
             $usage = $data['usage'] ?? [];
 
-            // Parse the response to extract any actions
+            // Parse the response to extract actions and state
             $parsed = $this->responseParser->parse($content);
+
+            Log::debug("ChatGPT Response", [
+                'content' => $content,
+                'actions' => count($parsed['actions']),
+                'state' => $parsed['state'] ?? null,
+            ]);
 
             return new ChatResponseDTO(
                 content: $content,
                 actions: $parsed['actions'],
                 cleanContent: $parsed['cleanContent'],
+                state: $parsed['state'] ?? null,
                 promptTokens: $usage['prompt_tokens'] ?? null,
                 completionTokens: $usage['completion_tokens'] ?? null,
                 model: $data['model'] ?? $config->model,
@@ -68,7 +82,7 @@ class ChatGptService implements ChatCompletionInterface
             ]);
 
             return new ChatResponseDTO(
-                content: 'I apologize, but I\'m experiencing technical difficulties. Please try again later.',
+                content: 'Извините, возникли технические неполадки. Пожалуйста, попробуйте позже.',
             );
         }
     }
@@ -93,17 +107,43 @@ class ChatGptService implements ChatCompletionInterface
         }
     }
 
-    private function prepareMessages(array $messages, ?string $systemPrompt): array
+    /**
+     * Prepare messages for the API call.
+     *
+     * @param array $messages Conversation messages
+     * @param string|array|null $systemPrompt Single string OR array of system messages
+     */
+    private function prepareMessages(array $messages, string|array|null $systemPrompt): array
     {
         $prepared = [];
 
+        // Handle system prompt(s)
         if ($systemPrompt) {
-            $prepared[] = [
-                'role' => 'system',
-                'content' => $systemPrompt,
-            ];
+            if (is_array($systemPrompt)) {
+                // Multiple system messages (new format)
+                foreach ($systemPrompt as $sysMessage) {
+                    if (is_array($sysMessage) && isset($sysMessage['content'])) {
+                        $prepared[] = [
+                            'role' => $sysMessage['role'] ?? 'system',
+                            'content' => $sysMessage['content'],
+                        ];
+                    } elseif (is_string($sysMessage)) {
+                        $prepared[] = [
+                            'role' => 'system',
+                            'content' => $sysMessage,
+                        ];
+                    }
+                }
+            } else {
+                // Single system prompt string (legacy format)
+                $prepared[] = [
+                    'role' => 'system',
+                    'content' => $systemPrompt,
+                ];
+            }
         }
 
+        // Add conversation messages
         foreach ($messages as $message) {
             $prepared[] = [
                 'role' => $message['role'],
