@@ -1,6 +1,7 @@
-# Dependencies
+# Dependencies (vendor is rebuilt in Docker)
 /vendor
 /node_modules
+/admin-panel/node_modules
 
 # Build artifacts
 /public/build
@@ -15,14 +16,16 @@
 
 # Environment files
 .env
-.env.backup
-.env.production
+.env.*
+!.env.example
 
 # IDE and editor
 .idea
 .vscode
 *.swp
 *.swo
+.phpstorm.meta.php
+_ide_helper*.php
 
 # OS files
 .DS_Store
@@ -33,14 +36,30 @@ Thumbs.db
 .gitattributes
 .gitignore
 
-# Docker
-docker-compose.override.yml
+# Docker (local development files)
+docker-compose*.yml
+docker/nginx/
+docker/php-cli/
+docker/php/Dockerfile
+docker/php/entrypoint.sh
 
 # Testing
+/tests
 /coverage
 .phpunit.result.cache
+phpunit.xml
+
+# Documentation
+README.md
+CLAUDE.md
+*.md
+docs/
+
+# Admin panel (separate build)
+/admin-panel
 
 # Misc
 *.log
 npm-debug.log
 yarn-error.log
+.editorconfig
