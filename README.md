@@ -1,8 +1,8 @@
-# ServiceBot - AI Assistant Platform
+# Chat Manager Bot - AI Assistant Platform
 
 ## Project Overview
 
-ServiceBot is a multi-tenant WhatsApp/Telegram AI assistant platform that acts as middleware between clients and ChatGPT. It replaces business managers for customer interactions, supporting table reservations, orders, inquiries, and other configurable actions.
+Chat Manager Bot is a multi-tenant WhatsApp/Telegram AI assistant platform that acts as middleware between clients and ChatGPT. It replaces business managers for customer interactions, supporting table reservations, orders, inquiries, and other configurable actions.
 
 ## Tech Stack
 
