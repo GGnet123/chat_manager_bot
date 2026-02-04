@@ -1,7 +1,10 @@
 import { DataProvider, HttpError } from "@refinedev/core";
 import axios, { AxiosError } from "axios";
 
-const API_URL = "/api/v1/admin";
+// API URL - uses api.aibotchat.xyz subdomain in production
+const API_URL = import.meta.env.VITE_API_URL
+    ? `${import.meta.env.VITE_API_URL}/v1/admin`
+    : "/v1/admin";
 
 const axiosInstance = axios.create();
 

@@ -12,11 +12,17 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        apiPrefix: '', // Remove /api prefix since we use api.aibotchat.xyz subdomain
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'verify.whatsapp' => VerifyWhatsAppSignature::class,
             'verify.telegram' => VerifyTelegramSignature::class,
+        ]);
+
+        // Enable CORS for API routes
+        $middleware->api(prepend: [
+            \Illuminate\Http\Middleware\HandleCors::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

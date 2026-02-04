@@ -1,7 +1,10 @@
 import type { AuthProvider } from "@refinedev/core";
 import axios from "axios";
 
-const API_URL = "/api/v1";
+// API URL - uses api.aibotchat.xyz subdomain in production
+const API_URL = import.meta.env.VITE_API_URL
+    ? `${import.meta.env.VITE_API_URL}/v1`
+    : "/v1";
 
 export const authProvider: AuthProvider = {
     login: async ({ email, password }) => {

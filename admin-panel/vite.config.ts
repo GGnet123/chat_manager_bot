@@ -13,7 +13,15 @@ export default defineConfig({
         port: 3000,
         host: "0.0.0.0",
         proxy: {
-            "/api": {
+            "/v1": {
+                target: process.env.API_PROXY_TARGET || "http://nginx:80",
+                changeOrigin: true,
+            },
+            "/webhook": {
+                target: process.env.API_PROXY_TARGET || "http://nginx:80",
+                changeOrigin: true,
+            },
+            "/health": {
                 target: process.env.API_PROXY_TARGET || "http://nginx:80",
                 changeOrigin: true,
             },
@@ -26,7 +34,15 @@ export default defineConfig({
         port: 3000,
         host: "0.0.0.0",
         proxy: {
-            "/api": {
+            "/v1": {
+                target: process.env.API_PROXY_TARGET || "http://web:80",
+                changeOrigin: true,
+            },
+            "/webhook": {
+                target: process.env.API_PROXY_TARGET || "http://web:80",
+                changeOrigin: true,
+            },
+            "/health": {
                 target: process.env.API_PROXY_TARGET || "http://web:80",
                 changeOrigin: true,
             },

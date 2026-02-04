@@ -47,8 +47,9 @@ export const GptConfigList = () => {
     };
 
     const handleActivate = async (id: number) => {
+        const apiUrl = import.meta.env.VITE_API_URL || "";
         try {
-            const response = await fetch(`/api/v1/admin/gpt-configs/${id}/activate`, {
+            const response = await fetch(`${apiUrl}/v1/admin/gpt-configs/${id}/activate`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`,
