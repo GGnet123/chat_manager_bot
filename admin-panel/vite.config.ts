@@ -14,12 +14,22 @@ export default defineConfig({
         host: "0.0.0.0",
         proxy: {
             "/api": {
-                target: "http://nginx:80",
+                target: process.env.API_PROXY_TARGET || "http://nginx:80",
                 changeOrigin: true,
             },
         },
         watch: {
             usePolling: true,
+        },
+    },
+    preview: {
+        port: 3000,
+        host: "0.0.0.0",
+        proxy: {
+            "/api": {
+                target: process.env.API_PROXY_TARGET || "http://web:80",
+                changeOrigin: true,
+            },
         },
     },
 });
