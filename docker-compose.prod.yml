@@ -8,7 +8,11 @@ services:
     environment:
       - APP_ENV=production
       - RUN_MIGRATIONS=true
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
     depends_on:
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
     restart: unless-stopped
@@ -17,7 +21,9 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 30s
+    networks:
+      - app-network
 
   queue:
     image: 153402911239.dkr.ecr.eu-north-1.amazonaws.com/ggnet/ai-chat-bot:latest
@@ -26,10 +32,33 @@ services:
       - .env
     environment:
       - APP_ENV=production
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
     depends_on:
-      web:
+      postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-servicebot}
+      POSTGRES_USER: ${DB_USERNAME:-servicebot}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-servicebot} -d ${DB_DATABASE:-servicebot}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - app-network
 
   redis:
     image: redis:7-alpine
@@ -41,6 +70,29 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      - app-network
+
+  admin-panel:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./admin-panel:/app:cached
+      - admin-node-modules:/app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-http://localhost}
+    command: sh -c "npm install && npm run build && npm run preview -- --host 0.0.0.0 --port 3000"
+    restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
+  postgres-data:
   redis-data:
+  admin-node-modules:

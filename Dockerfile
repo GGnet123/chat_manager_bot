@@ -25,7 +25,9 @@ RUN composer install \
 
 COPY . .
 
-RUN composer dump-autoload --optimize --no-dev
+# Clear any cached dev service providers and rebuild autoload
+RUN rm -rf bootstrap/cache/*.php \
+    && composer dump-autoload --optimize --no-dev
 
 # -----------------------------------------------------------------------------
 # Stage 2: Production image
@@ -197,8 +199,9 @@ WORKDIR /var/www
 COPY --from=composer /app/vendor ./vendor
 COPY . .
 
-# Set permissions
-RUN chown -R nginx:nginx /var/www \
+# Clear bootstrap cache and set permissions
+RUN rm -rf bootstrap/cache/*.php \
+    && chown -R nginx:nginx /var/www \
     && chmod -R 755 /var/www/storage \
     && chmod -R 755 /var/www/bootstrap/cache
 
@@ -209,6 +212,10 @@ set -e
 
 # Run mode (web, queue, scheduler)
 MODE=${1:-web}
+
+# Discover packages (rebuilds bootstrap/cache/packages.php)
+echo "Discovering packages..."
+php artisan package:discover --ansi
 
 # Run migrations (only in web mode to avoid race conditions)
 if [ "$MODE" = "web" ] && [ "$RUN_MIGRATIONS" = "true" ]; then

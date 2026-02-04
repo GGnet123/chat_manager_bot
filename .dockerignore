@@ -14,6 +14,9 @@
 /storage/framework/sessions/*
 /storage/framework/views/*
 
+# Bootstrap cache (dev service providers)
+/bootstrap/cache/*.php
+
 # Environment files
 .env
 .env.*
