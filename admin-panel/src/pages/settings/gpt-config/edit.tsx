@@ -1,14 +1,51 @@
-import { Edit, useForm } from "@refinedev/antd";
+import { Edit, useForm, useSelect } from "@refinedev/antd";
+import { useGetIdentity } from "@refinedev/core";
 import { Form, Input, InputNumber, Select, Switch } from "antd";
 
 const { TextArea } = Input;
 
+interface UserIdentity {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    business_id?: number;
+}
+
 export const GptConfigEdit = () => {
-    const { formProps, saveButtonProps } = useForm();
+    const { data: user } = useGetIdentity<UserIdentity>();
+    const isSuperAdmin = user?.role === "super_admin";
+
+    const { formProps, saveButtonProps } = useForm({
+        errorNotification: (error) => ({
+            message: "Error",
+            description: error?.message || "Failed to update GPT config",
+            type: "error",
+        }),
+    });
+
+    const { selectProps: businessSelectProps } = useSelect({
+        resource: "businesses",
+        optionLabel: "name",
+        optionValue: "id",
+    });
 
     return (
         <Edit saveButtonProps={saveButtonProps}>
             <Form {...formProps} layout="vertical">
+                {isSuperAdmin && (
+                    <Form.Item
+                        label="Business"
+                        name="business_id"
+                        rules={[{ required: true, message: "Please select a business" }]}
+                    >
+                        <Select
+                            {...businessSelectProps}
+                            placeholder="Select business"
+                        />
+                    </Form.Item>
+                )}
+
                 <Form.Item
                     label="Name"
                     name="name"

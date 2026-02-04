@@ -2,7 +2,13 @@ import { Create, useForm } from "@refinedev/antd";
 import { Form, Input, Switch } from "antd";
 
 export const BusinessCreate = () => {
-    const { formProps, saveButtonProps } = useForm();
+    const { formProps, saveButtonProps } = useForm({
+        errorNotification: (error) => ({
+            message: "Error",
+            description: error?.message || "Failed to create business",
+            type: "error",
+        }),
+    });
 
     return (
         <Create saveButtonProps={saveButtonProps}>

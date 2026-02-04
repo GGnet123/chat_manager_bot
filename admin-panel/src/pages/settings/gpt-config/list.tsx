@@ -4,13 +4,47 @@ import {
     EditButton,
     DeleteButton,
 } from "@refinedev/antd";
+import { useGetIdentity, useMany } from "@refinedev/core";
 import { Table, Tag, Space, Button, message } from "antd";
 import { CheckCircleOutlined } from "@ant-design/icons";
 
+interface UserIdentity {
+    id: number;
+    role: string;
+}
+
+interface GptConfig {
+    id: number;
+    name: string;
+    model: string;
+    max_tokens: number;
+    temperature: number;
+    is_active: boolean;
+    business_id: number;
+}
+
 export const GptConfigList = () => {
-    const { tableProps, tableQueryResult } = useTable({
+    const { data: user } = useGetIdentity<UserIdentity>();
+    const isSuperAdmin = user?.role === "super_admin";
+
+    const { tableProps, tableQueryResult } = useTable<GptConfig>({
         syncWithLocation: true,
     });
+
+    // Get business names for super admin view
+    const businessIds = tableProps.dataSource?.map((item) => item.business_id) || [];
+    const { data: businessesData } = useMany({
+        resource: "businesses",
+        ids: businessIds,
+        queryOptions: {
+            enabled: isSuperAdmin && businessIds.length > 0,
+        },
+    });
+
+    const getBusinessName = (businessId: number) => {
+        const business = businessesData?.data?.find((b: any) => b.id === businessId);
+        return business?.name || businessId;
+    };
 
     const handleActivate = async (id: number) => {
         try {
@@ -25,7 +59,8 @@ export const GptConfigList = () => {
                 message.success("Configuration activated");
                 tableQueryResult.refetch();
             } else {
-                message.error("Failed to activate configuration");
+                const data = await response.json();
+                message.error(data.message || "Failed to activate configuration");
             }
         } catch (error) {
             message.error("Failed to activate configuration");
@@ -36,6 +71,13 @@ export const GptConfigList = () => {
         <List>
             <Table {...tableProps} rowKey="id">
                 <Table.Column dataIndex="id" title="ID" width={80} />
+                {isSuperAdmin && (
+                    <Table.Column
+                        dataIndex="business_id"
+                        title="Business"
+                        render={(value) => getBusinessName(value)}
+                    />
+                )}
                 <Table.Column dataIndex="name" title="Name" />
                 <Table.Column dataIndex="model" title="Model" />
                 <Table.Column dataIndex="max_tokens" title="Max Tokens" />
@@ -55,7 +97,7 @@ export const GptConfigList = () => {
                 />
                 <Table.Column
                     title="Actions"
-                    render={(_, record: any) => (
+                    render={(_, record: GptConfig) => (
                         <Space>
                             {!record.is_active && (
                                 <Button

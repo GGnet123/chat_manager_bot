@@ -2,7 +2,13 @@ import { Edit, useForm } from "@refinedev/antd";
 import { Form, Input, Switch } from "antd";
 
 export const BusinessEdit = () => {
-    const { formProps, saveButtonProps } = useForm();
+    const { formProps, saveButtonProps } = useForm({
+        errorNotification: (error) => ({
+            message: "Error",
+            description: error?.message || "Failed to update business",
+            type: "error",
+        }),
+    });
 
     return (
         <Edit saveButtonProps={saveButtonProps}>

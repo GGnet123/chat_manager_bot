@@ -1,9 +1,36 @@
 import { Edit, useForm } from "@refinedev/antd";
+import { useGetIdentity } from "@refinedev/core";
 import { Form, Input, Select, Switch } from "antd";
 import { USER_ROLE_LABELS } from "../../types";
 
+interface UserIdentity {
+    id: number;
+    role: string;
+    business_id?: number;
+}
+
 export const UserEdit = () => {
-    const { formProps, saveButtonProps } = useForm();
+    const { data: currentUser } = useGetIdentity<UserIdentity>();
+    const isSuperAdmin = currentUser?.role === "super_admin";
+
+    const { formProps, saveButtonProps } = useForm({
+        errorNotification: (error) => ({
+            message: "Error",
+            description: error?.message || "Failed to update user",
+            type: "error",
+        }),
+    });
+
+    // Role options based on current user's role
+    const roleOptions = isSuperAdmin
+        ? [
+            { label: USER_ROLE_LABELS.super_admin, value: "super_admin" },
+            { label: USER_ROLE_LABELS.admin_manager, value: "admin_manager" },
+            { label: USER_ROLE_LABELS.manager, value: "manager" },
+        ]
+        : [
+            { label: USER_ROLE_LABELS.manager, value: "manager" },
+        ];
 
     return (
         <Edit saveButtonProps={saveButtonProps}>
@@ -63,11 +90,8 @@ export const UserEdit = () => {
                     rules={[{ required: true, message: "Please select a role" }]}
                 >
                     <Select
-                        options={[
-                            { label: USER_ROLE_LABELS.super_admin, value: "super_admin" },
-                            { label: USER_ROLE_LABELS.admin_manager, value: "admin_manager" },
-                            { label: USER_ROLE_LABELS.manager, value: "manager" },
-                        ]}
+                        options={roleOptions}
+                        disabled={!isSuperAdmin}
                     />
                 </Form.Item>
 

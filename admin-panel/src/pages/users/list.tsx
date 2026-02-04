@@ -1,10 +1,20 @@
 import { List, useTable, EditButton, ShowButton, DeleteButton } from "@refinedev/antd";
+import { useGetIdentity } from "@refinedev/core";
 import { Table, Space, Tag } from "antd";
 import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import type { User, UserRole } from "../../types";
 import { USER_ROLE_LABELS, USER_ROLE_COLORS } from "../../types";
 
+interface UserIdentity {
+    id: number;
+    role: string;
+    business_id?: number;
+}
+
 export const UserList = () => {
+    const { data: currentUser } = useGetIdentity<UserIdentity>();
+    const isSuperAdmin = currentUser?.role === "super_admin";
+
     const { tableProps } = useTable<User>({
         syncWithLocation: true,
     });
@@ -51,13 +61,25 @@ export const UserList = () => {
                 <Table.Column
                     title="Actions"
                     width={150}
-                    render={(_, record: User) => (
-                        <Space>
-                            <ShowButton hideText size="small" recordItemId={record.id} />
-                            <EditButton hideText size="small" recordItemId={record.id} />
-                            <DeleteButton hideText size="small" recordItemId={record.id} />
-                        </Space>
-                    )}
+                    render={(_, record: User) => {
+                        // Admin managers can't edit/delete super_admins or other admin_managers
+                        const canModify = isSuperAdmin ||
+                            (record.role !== "super_admin" && record.role !== "admin_manager");
+
+                        return (
+                            <Space>
+                                <ShowButton hideText size="small" recordItemId={record.id} />
+                                {canModify && (
+                                    <>
+                                        <EditButton hideText size="small" recordItemId={record.id} />
+                                        {isSuperAdmin && (
+                                            <DeleteButton hideText size="small" recordItemId={record.id} />
+                                        )}
+                                    </>
+                                )}
+                            </Space>
+                        );
+                    }}
                 />
             </Table>
         </List>

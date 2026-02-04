@@ -107,6 +107,9 @@ export const authProvider: AuthProvider = {
                 id: parsed.id,
                 name: parsed.name,
                 email: parsed.email,
+                role: parsed.role,
+                business_id: parsed.business_id,
+                businesses: parsed.businesses,
                 avatar: undefined,
             };
         }

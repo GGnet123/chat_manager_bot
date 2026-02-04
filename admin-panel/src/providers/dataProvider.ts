@@ -1,5 +1,5 @@
-import { DataProvider } from "@refinedev/core";
-import axios from "axios";
+import { DataProvider, HttpError } from "@refinedev/core";
+import axios, { AxiosError } from "axios";
 
 const API_URL = "/api/v1/admin";
 
@@ -14,16 +14,58 @@ axiosInstance.interceptors.request.use((config) => {
     return config;
 });
 
-// Handle 401 errors
+// Transform errors to Refine's HttpError format
+const transformError = (error: AxiosError<any>): HttpError => {
+    const status = error.response?.status || 500;
+    const data = error.response?.data;
+
+    // Extract message from Laravel response
+    let message = "An unexpected error occurred";
+    let errors: Record<string, string[]> | undefined;
+
+    if (data) {
+        // Laravel validation errors (422)
+        if (data.errors && typeof data.errors === "object") {
+            errors = data.errors;
+            // Combine all validation errors into one message
+            const errorMessages = Object.entries(data.errors)
+                .map(([field, msgs]) => `${field}: ${(msgs as string[]).join(", ")}`)
+                .join("\n");
+            message = data.message ? `${data.message}\n${errorMessages}` : errorMessages;
+        }
+        // Standard Laravel error message
+        else if (data.message) {
+            message = data.message;
+        }
+        // Fallback to error string
+        else if (typeof data === "string") {
+            message = data;
+        }
+    }
+
+    const httpError: HttpError = {
+        message,
+        statusCode: status,
+        errors,
+    };
+
+    return httpError;
+};
+
+// Handle response errors
 axiosInstance.interceptors.response.use(
     (response) => response,
-    (error) => {
+    (error: AxiosError<any>) => {
+        // Handle 401 - redirect to login
         if (error.response?.status === 401) {
             localStorage.removeItem("token");
             localStorage.removeItem("user");
             window.location.href = "/login";
         }
-        return Promise.reject(error);
+
+        // Transform to HttpError for Refine
+        const httpError = transformError(error);
+        return Promise.reject(httpError);
     }
 );
 

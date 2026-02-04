@@ -1,14 +1,64 @@
-import { Create, useForm } from "@refinedev/antd";
+import { Create, useForm, useSelect } from "@refinedev/antd";
+import { useGetIdentity } from "@refinedev/core";
 import { Form, Input, Select, Switch } from "antd";
+import { useEffect } from "react";
 
 const { TextArea } = Input;
 
+interface UserIdentity {
+    id: number;
+    role: string;
+    business_id?: number;
+    businesses?: { id: number; name: string }[];
+}
+
 export const PromptCreate = () => {
-    const { formProps, saveButtonProps } = useForm();
+    const { data: user } = useGetIdentity<UserIdentity>();
+    const isSuperAdmin = user?.role === "super_admin";
+
+    const { formProps, saveButtonProps, form } = useForm({
+        errorNotification: (error) => ({
+            message: "Error",
+            description: error?.message || "Failed to create prompt",
+            type: "error",
+        }),
+    });
+
+    const { selectProps: businessSelectProps } = useSelect({
+        resource: "businesses",
+        optionLabel: "name",
+        optionValue: "id",
+    });
+
+    // Auto-fill business_id for non-super admin users
+    useEffect(() => {
+        if (!isSuperAdmin && user?.business_id) {
+            form.setFieldValue("business_id", user.business_id);
+        } else if (!isSuperAdmin && user?.businesses?.length) {
+            form.setFieldValue("business_id", user.businesses[0].id);
+        }
+    }, [user, isSuperAdmin, form]);
 
     return (
         <Create saveButtonProps={saveButtonProps}>
             <Form {...formProps} layout="vertical">
+                {isSuperAdmin ? (
+                    <Form.Item
+                        label="Business"
+                        name="business_id"
+                        rules={[{ required: true, message: "Please select a business" }]}
+                    >
+                        <Select
+                            {...businessSelectProps}
+                            placeholder="Select business"
+                        />
+                    </Form.Item>
+                ) : (
+                    <Form.Item name="business_id" hidden>
+                        <Input type="hidden" />
+                    </Form.Item>
+                )}
+
                 <Form.Item
                     label="Name"
                     name="name"

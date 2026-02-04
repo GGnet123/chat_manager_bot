@@ -13,6 +13,16 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Health check (no auth, no middleware)
+Route::get('health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'php' => PHP_VERSION,
+        'laravel' => app()->version(),
+        'timestamp' => now()->toIso8601String(),
+    ]);
+})->name('api.health');
+
 // Webhook routes (no authentication)
 Route::prefix('webhook')->group(function () {
     // WhatsApp webhook verification and incoming messages
