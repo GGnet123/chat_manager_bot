@@ -232,7 +232,8 @@ mkdir -p /var/www/storage/framework/cache
 mkdir -p /var/www/storage/framework/sessions
 mkdir -p /var/www/storage/framework/views
 mkdir -p /var/www/bootstrap/cache
-chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+chmod -R 777 /var/www/storage /var/www/bootstrap/cache
+chown -R nobody:nobody /var/www/storage /var/www/bootstrap/cache 2>/dev/null || true
 
 # Generate app key if not set (for initial setup)
 if [ -z "$APP_KEY" ]; then

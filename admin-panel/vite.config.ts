@@ -33,6 +33,7 @@ export default defineConfig({
     preview: {
         port: 3000,
         host: "0.0.0.0",
+        allowedHosts: ["aibotchat.xyz", "localhost"],
         proxy: {
             "/v1": {
                 target: process.env.API_PROXY_TARGET || "http://web:80",
