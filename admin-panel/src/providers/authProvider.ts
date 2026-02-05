@@ -19,6 +19,9 @@ export const authProvider: AuthProvider = {
             localStorage.setItem("token", token);
             localStorage.setItem("user", JSON.stringify(user));
 
+            // Notify App component that user changed
+            window.dispatchEvent(new Event("userChanged"));
+
             return {
                 success: true,
                 redirectTo: "/",
@@ -55,6 +58,9 @@ export const authProvider: AuthProvider = {
 
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+
+        // Notify App component that user changed
+        window.dispatchEvent(new Event("userChanged"));
 
         return {
             success: true,

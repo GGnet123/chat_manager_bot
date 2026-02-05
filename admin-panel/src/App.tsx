@@ -25,6 +25,7 @@ import {
     ShopOutlined,
     UserOutlined,
 } from "@ant-design/icons";
+import { useState, useEffect } from "react";
 
 import { authProvider } from "./providers/authProvider";
 import { dataProvider } from "./providers/dataProvider";
@@ -43,110 +44,70 @@ import "@refinedev/antd/dist/reset.css";
 
 type UserRole = "super_admin" | "admin_manager" | "manager";
 
-const getUserRole = (): UserRole => {
-    try {
-        const user = localStorage.getItem("user");
-        if (user) {
-            const parsed = JSON.parse(user);
-            return parsed.role || "manager";
-        }
-    } catch {
-        // ignore
-    }
-    return "manager";
-};
-
 const getResourcesForRole = (role: UserRole) => {
     const baseResources = [
         {
             name: "dashboard",
             list: "/dashboard",
-            meta: {
-                label: "Dashboard",
-                icon: <DashboardOutlined />,
-            },
+            meta: { label: "Dashboard", icon: <DashboardOutlined /> },
         },
         {
             name: "actions",
             list: "/actions",
             show: "/actions/:id",
-            meta: {
-                label: "Actions",
-                icon: <OrderedListOutlined />,
-            },
+            meta: { label: "Actions", icon: <OrderedListOutlined /> },
         },
         {
             name: "conversations",
             list: "/conversations",
             show: "/conversations/:id",
-            meta: {
-                label: "Conversations",
-                icon: <MessageOutlined />,
-            },
+            meta: { label: "Conversations", icon: <MessageOutlined /> },
         },
     ];
 
-    // Manager only sees dashboard, actions, conversations
     if (role === "manager") {
         return baseResources;
     }
 
-    // Admin manager sees users and settings (but not businesses)
+    const settingsResources = [
+        {
+            name: "users",
+            list: "/users",
+            show: "/users/:id",
+            create: "/users/create",
+            edit: "/users/:id/edit",
+            meta: { label: "Users", icon: <UserOutlined /> },
+        },
+        {
+            name: "gpt-configs",
+            list: "/settings/gpt-configs",
+            create: "/settings/gpt-configs/create",
+            edit: "/settings/gpt-configs/:id/edit",
+            meta: { label: "GPT Config", parent: "settings", icon: <SettingOutlined /> },
+        },
+        {
+            name: "prompts",
+            list: "/settings/prompts",
+            create: "/settings/prompts/create",
+            edit: "/settings/prompts/:id/edit",
+            meta: { label: "Prompts", parent: "settings" },
+        },
+        {
+            name: "notification-channels",
+            list: "/settings/notifications",
+            meta: { label: "Notifications", parent: "settings", icon: <BellOutlined /> },
+        },
+        {
+            name: "settings",
+            meta: { label: "Settings", icon: <SettingOutlined /> },
+        },
+    ];
+
     if (role === "admin_manager") {
-        return [
-            ...baseResources,
-            {
-                name: "users",
-                list: "/users",
-                show: "/users/:id",
-                create: "/users/create",
-                edit: "/users/:id/edit",
-                meta: {
-                    label: "Users",
-                    icon: <UserOutlined />,
-                },
-            },
-            {
-                name: "gpt-configs",
-                list: "/settings/gpt-configs",
-                create: "/settings/gpt-configs/create",
-                edit: "/settings/gpt-configs/:id/edit",
-                meta: {
-                    label: "GPT Config",
-                    parent: "settings",
-                    icon: <SettingOutlined />,
-                },
-            },
-            {
-                name: "prompts",
-                list: "/settings/prompts",
-                create: "/settings/prompts/create",
-                edit: "/settings/prompts/:id/edit",
-                meta: {
-                    label: "Prompts",
-                    parent: "settings",
-                },
-            },
-            {
-                name: "notification-channels",
-                list: "/settings/notifications",
-                meta: {
-                    label: "Notifications",
-                    parent: "settings",
-                    icon: <BellOutlined />,
-                },
-            },
-            {
-                name: "settings",
-                meta: {
-                    label: "Settings",
-                    icon: <SettingOutlined />,
-                },
-            },
-        ];
+        return [...baseResources, ...settingsResources];
     }
 
-    // Super admin sees everything
+    // Super admin - add businesses
     return [
         ...baseResources,
         {
@@ -155,75 +116,50 @@ const getResourcesForRole = (role: UserRole) => {
             show: "/businesses/:id",
             create: "/businesses/create",
             edit: "/businesses/:id/edit",
-            meta: {
-                label: "Businesses",
-                icon: <ShopOutlined />,
-            },
+            meta: { label: "Businesses", icon: <ShopOutlined /> },
         },
-        {
-            name: "users",
-            list: "/users",
-            show: "/users/:id",
-            create: "/users/create",
-            edit: "/users/:id/edit",
-            meta: {
-                label: "Users",
-                icon: <UserOutlined />,
-            },
-        },
-        {
-            name: "gpt-configs",
-            list: "/settings/gpt-configs",
-            create: "/settings/gpt-configs/create",
-            edit: "/settings/gpt-configs/:id/edit",
-            meta: {
-                label: "GPT Config",
-                parent: "settings",
-                icon: <SettingOutlined />,
-            },
-        },
-        {
-            name: "prompts",
-            list: "/settings/prompts",
-            create: "/settings/prompts/create",
-            edit: "/settings/prompts/:id/edit",
-            meta: {
-                label: "Prompts",
-                parent: "settings",
-            },
-        },
-        {
-            name: "notification-channels",
-            list: "/settings/notifications",
-            meta: {
-                label: "Notifications",
-                parent: "settings",
-                icon: <BellOutlined />,
-            },
-        },
-        {
-            name: "settings",
-            meta: {
-                label: "Settings",
-                icon: <SettingOutlined />,
-            },
-        },
+        ...settingsResources,
     ];
 };
 
 function App() {
-    const role = getUserRole();
-    const resources = getResourcesForRole(role);
+    const [role, setRole] = useState<UserRole | null>(null);
+
+    useEffect(() => {
+        // Check for existing user on mount
+        const user = localStorage.getItem("user");
+        if (user) {
+            try {
+                setRole(JSON.parse(user).role || "manager");
+            } catch {
+                setRole(null);
+            }
+        }
+
+        // Listen for login/logout events
+        const handleUserChange = () => {
+            const user = localStorage.getItem("user");
+            if (user) {
+                try {
+                    setRole(JSON.parse(user).role || "manager");
+                } catch {
+                    setRole(null);
+                }
+            } else {
+                setRole(null);
+            }
+        };
+
+        window.addEventListener("userChanged", handleUserChange);
+        return () => window.removeEventListener("userChanged", handleUserChange);
+    }, []);
+
+    // Only compute resources when we have a role
+    const resources = role ? getResourcesForRole(role) : [];
 
     return (
         <BrowserRouter>
-            <ConfigProvider
-                theme={{
-                    token: {
-                        colorPrimary: "#1890ff",
-                    },
-                }}
-            >
+            <ConfigProvider theme={{ token: { colorPrimary: "#1890ff" } }}>
                 <AntdApp>
                     <Refine
                         dataProvider={dataProvider}
@@ -251,10 +187,7 @@ function App() {
                                     </Authenticated>
                                 }
                             >
-                                <Route
-                                    index
-                                    element={<NavigateToResource resource="dashboard" />}
-                                />
+                                <Route index element={<NavigateToResource resource="dashboard" />} />
                                 <Route path="/dashboard" element={<DashboardPage />} />
                                 <Route path="/businesses">
                                     <Route index element={<BusinessList />} />
