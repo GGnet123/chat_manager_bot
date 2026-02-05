@@ -20,10 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'verify.telegram' => VerifyTelegramSignature::class,
         ]);
 
-        // Enable CORS for API routes
-        $middleware->api(prepend: [
-            \Illuminate\Http\Middleware\HandleCors::class,
-        ]);
+        // CORS is handled by nginx reverse proxy
+        // $middleware->api(prepend: [
+        //     \Illuminate\Http\Middleware\HandleCors::class,
+        // ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
